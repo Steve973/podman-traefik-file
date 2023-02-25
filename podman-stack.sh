@@ -2,16 +2,14 @@
 
 ########################################################################################################################
 ## Global script variables below here
-########################################################################################################################
+#<editor-fold desc="global vars">
 
-# App versions
 MONGO_VERSION=6.0.3
 ARANGO_VERSION=3.10.2
 ELK_VERSION=8.5.3
 GRAFANA_VERSION=9.3.2
 TRAEFIK_VERSION=2.9.6
 
-# Ports
 DATA_DASHBOARD_PORT=8444
 MONGO_PORT=27017
 ARANGO_ROOT_PASSWORD=test123
@@ -24,13 +22,13 @@ GRAFANA_PORT=3000
 NIFI_PORT=8088
 WORK_DIR=/tmp
 
-########################################################################################################################
+#</editor-fold>
 ## Global script variables above here
 ########################################################################################################################
 
 ########################################################################################################################
 ## Init methods below here
-########################################################################################################################
+#<editor-fold desc="init methods">
 
 create_certs() {
   if [ ! -d ${WORK_DIR}/certs ]; then
@@ -126,13 +124,13 @@ init_arangodb() {
   fi
 }
 
-########################################################################################################################
+#</editor-fold>
 ## Init methods above here
 ########################################################################################################################
 
 ########################################################################################################################
 ## Stop methods below here
-########################################################################################################################
+#<editor-fold desc="stop methods">
 
 stop_mongodb() {
   podman container stop data_mongodb
@@ -183,32 +181,24 @@ stop_data_proxy() {
   podman pod rm data_proxy
 }
 
-stop_data_apps() {
+stop() {
   stop_mongodb
   stop_arangodb
   stop_elasticsearch
   stop_kibana
   stop_grafana
   stop_nifi
-}
-
-stop_data_stack() {
-  stop_data_apps
   stop_data_proxy
   remove_data_network
 }
 
-stop_all() {
-  stop_data_stack
-}
-
-########################################################################################################################
+#</editor-fold>
 ## Stop methods above here
 ########################################################################################################################
 
 ########################################################################################################################
 ## Start methods below here
-########################################################################################################################
+#<editor-fold desc="start methods">
 
 start_mongodb() {
   podman pod create \
@@ -371,70 +361,42 @@ start_data_proxy() {
     --providers.file.directory=/etc/traefik/dynamic
 }
 
-start_data_apps() {
+start() {
+  provision_data_resources
+  create_secrets
+  create_data_network
   start_mongodb
   start_arangodb
   start_elasticsearch
   start_kibana
   start_grafana
   start_nifi
-}
-
-start_data_stack() {
-  provision_data_resources
-  create_secrets
-  create_data_network
-  start_data_apps
   start_data_proxy
 }
 
-start_all() {
-  start_data_stack
-}
-
-########################################################################################################################
+#</editor-fold>
 ## Start methods above here
 ########################################################################################################################
 
 ########################################################################################################################
-## Main entrypoint section below here
-########################################################################################################################
+## Option Processor below here
+#<editor-fold desc="option processor">
 
-TEMP=$(getopt -o cs:t: --long clean,start:,stop: -- "$@")
-eval set -- "${TEMP}"
 case "$1" in
   -c|--clean)
-    target=clean_resources
+    clean_resources
     ;;
   -s|--start)
-    case "$2" in
-      'data')
-        target=start_data_stack
-        ;;
-      'services')
-        target=start_services_stack
-        ;;
-      'all')
-        target=start_all
-        ;;
-    esac
+    start
     ;;
   -t|--stop)
-    case "$2" in
-      'data')
-        target=stop_data_stack
-        ;;
-      'services')
-        target=stop_services_stack
-        ;;
-      'all')
-        target=stop_all
-        ;;
-    esac
+    stop
     ;;
   *) echo "Invalid option selected!"
     exit 1
     ;;
 esac
 
-eval "${target}"
+#</editor-fold>
+## Option Processor above here
+########################################################################################################################
