@@ -1,0 +1,94 @@
+tcp:
+  services:
+    mongodb:
+      loadBalancer:
+        servers:
+          - address: "mongodb:27017"
+  routers:
+    mongodb-router:
+      entryPoints:
+        - mongo-tcp
+      rule: "HostSNI(`localhost`)"
+      service: mongodb
+      tls: {}
+
+http:
+  services:
+    arangodb:
+      loadBalancer:
+        servers:
+          - url: "http://arangodb:8529/"
+    elasticsearch:
+      loadBalancer:
+        servers:
+          - url: "http://elasticsearch01:9200/"
+    kibana:
+      loadBalancer:
+        servers:
+          - url: "http://kibana:5601/"
+    grafana:
+      loadBalancer:
+        servers:
+          - url: "http://grafana:3000/"
+    nifi:
+      loadBalancer:
+        servers:
+          - url: "http://nifi:8088/"
+  routers:
+    arangodb-router:
+      entryPoints:
+        - arango-http
+      rule: "HostRegexp(`{name:.+}`)"
+      service: arangodb
+      tls: {}
+    elasticsearch-router:
+      entryPoints:
+        - elasticsearch-http
+      rule: "HostRegexp(`{name:.+}`)"
+      service: elasticsearch
+      tls: {}
+    kibana-router:
+      entryPoints:
+        - kibana-http
+      rule: "HostRegexp(`{name:.+}`)"
+      service: kibana
+      tls: {}
+    grafana-router:
+      entryPoints:
+        - grafana-http
+      rule: "HostRegexp(`{name:.+}`)"
+      service: grafana
+      tls: {}
+    nifi-router:
+      entryPoints:
+        - nifi-http
+      rule: "HostRegexp(`{name:.+}`) && PathPrefix(`/nifi`)"
+      service: nifi
+      tls: {}
+    dashboard:
+      entryPoints:
+        - websecure
+      rule: "HostRegexp(`{name:.+}`) && (PathPrefix(`/api`) || PathPrefix(`/dashboard`))"
+      tls: {}
+      service: api@internal
+      middlewares:
+        - dashboard-auth
+  middlewares:
+    dashboard-auth:
+      basicAuth:
+        usersFile: /etc/credentials.txt
+
+tls:
+  stores:
+    default:
+      defaultCertificate:
+        certFile: /certs/test.crt
+        keyFile: /certs/test.key
+  options:
+    default:
+      minVersion: VersionTLS12
+      sniStrict: false
+      clientAuth:
+        caFiles:
+          - /certs/trust.pem
+        clientAuthType: RequireAndVerifyClientCert
