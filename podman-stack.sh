@@ -132,63 +132,23 @@ init_arangodb() {
 ## Stop methods below here
 #<editor-fold desc="stop methods">
 
-stop_mongodb() {
-  podman container stop data_mongodb
-  podman container rm data_mongodb
-  podman pod stop mongodb
-  podman pod rm mongodb
-}
-
-stop_arangodb() {
-  podman container stop data_arangodb
-  podman container rm data_arangodb
-  podman pod stop arangodb
-  podman pod rm arangodb
-}
-
-stop_elasticsearch() {
-  podman container stop es01
-  podman container rm es01
-  podman pod stop elasticsearch01
-  podman pod rm elasticsearch01
-}
-
-stop_kibana() {
-  podman container stop kibana1
-  podman container rm kibana1
-  podman pod stop kibana
-  podman pod rm kibana
-}
-
-stop_grafana() {
-  podman container stop grafana1
-  podman container rm grafana1
-  podman pod stop grafana
-  podman pod rm grafana
-}
-
-stop_nifi() {
-  podman container stop nifi1
-  podman container rm nifi1
-  podman pod stop nifi
-  podman pod rm nifi
-}
-
-stop_data_proxy() {
-  podman container stop traefik_proxy_data
-  podman container rm traefik_proxy_data
-  podman pod stop data_proxy
-  podman pod rm data_proxy
+stop_service() {
+  local service=${1}
+  local pod=${2}
+  podman container stop "${service}"
+  podman container rm "${service}"
+  podman pod stop "${pod}"
+  podman pod rm "${pod}"
 }
 
 stop() {
-  stop_mongodb
-  stop_arangodb
-  stop_elasticsearch
-  stop_kibana
-  stop_grafana
-  stop_nifi
-  stop_data_proxy
+  stop_service data_mongodb mongodb
+  stop_service data_arangodb arangodb
+  stop_service es01 elasticsearch01
+  stop_service kibana1 kibana
+  stop_service grafana1 grafana
+  stop_service nifi1 nifi
+  stop_service traefik_proxy_data data_proxy
   remove_data_network
 }
 
