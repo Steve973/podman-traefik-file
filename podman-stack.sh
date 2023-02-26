@@ -136,9 +136,9 @@ stop_service() {
   local service=${1}
   local pod=${2}
   podman container stop "${service}"
-  podman container rm "${service}"
+  podman container rm -f "${service}"
   podman pod stop "${pod}"
-  podman pod rm "${pod}"
+  podman pod rm -f "${pod}"
 }
 
 stop() {
@@ -148,7 +148,7 @@ stop() {
   stop_service kibana1 kibana
   stop_service grafana1 grafana
   stop_service nifi1 nifi
-  stop_service traefik_proxy_data data_proxy
+  stop_service proxy_traefik proxy
   remove_data_network
 }
 
@@ -160,16 +160,25 @@ stop() {
 ## Start methods below here
 #<editor-fold desc="start methods">
 
-start_mongodb() {
-  podman pod create \
-   --name mongodb \
-   --hostname mongodb \
-   --infra-name mongodb-infra \
-   --userns keep-id \
-   --sysctl net.ipv6.conf.all.disable_ipv6=1 \
-   --sysctl net.ipv6.conf.default.disable_ipv6=1 \
-   --network data_network
+start_pod() {
+  local pod="${1}"
+  shift
+  local extra_args=("${@}")
+  local pod_create_args=(
+   --name "${pod}"
+   --hostname "${pod}"
+   --infra-name "${pod}-infra"
+   --userns "keep-id"
+   --sysctl "net.ipv6.conf.all.disable_ipv6=1"
+   --sysctl "net.ipv6.conf.default.disable_ipv6=1"
+   --network "data_network"
+  )
+  pod_create_args+=("${extra_args[@]}")
+  podman pod create "${pod_create_args[@]}"
+}
 
+start_mongodb() {
+  start_pod mongodb
   podman run -d \
    --name data_mongodb \
    --pod mongodb \
@@ -183,15 +192,7 @@ start_mongodb() {
 }
 
 start_arangodb() {
-  podman pod create \
-   --name arangodb \
-   --hostname arangodb \
-   --infra-name arangodb-infra \
-   --userns keep-id \
-   --sysctl net.ipv6.conf.all.disable_ipv6=1 \
-   --sysctl net.ipv6.conf.default.disable_ipv6=1 \
-   --network data_network
-
+  start_pod arangodb
   podman run -d \
    --name data_arangodb \
    --pod arangodb \
@@ -202,15 +203,7 @@ start_arangodb() {
 }
 
 start_elasticsearch() {
-  podman pod create \
-   --name elasticsearch01 \
-   --hostname elasticsearch01 \
-   --infra-name elasticsearch-infra \
-   --userns keep-id \
-   --sysctl net.ipv6.conf.all.disable_ipv6=1 \
-   --sysctl net.ipv6.conf.default.disable_ipv6=1 \
-   --network data_network
-
+  start_pod elasticsearch01
   podman run -d \
    --pod elasticsearch01 \
    --name es01 \
@@ -222,14 +215,7 @@ start_elasticsearch() {
 }
 
 start_kibana() {
-  podman pod create \
-   --name kibana \
-   --hostname kibana \
-   --infra-name kibana-infra \
-   --sysctl net.ipv6.conf.all.disable_ipv6=1 \
-   --sysctl net.ipv6.conf.default.disable_ipv6=1 \
-   --network data_network
-
+  start_pod kibana
   podman run -d \
    --name kibana1 \
    --pod kibana \
@@ -241,14 +227,7 @@ start_kibana() {
 }
 
 start_grafana() {
-  podman pod create \
-   --name grafana \
-   --hostname grafana \
-   --infra-name grafana-infra \
-   --sysctl net.ipv6.conf.all.disable_ipv6=1 \
-   --sysctl net.ipv6.conf.default.disable_ipv6=1 \
-   --network data_network
-
+  start_pod grafana
   podman run -d \
    --name grafana1 \
    --pod grafana \
@@ -256,15 +235,7 @@ start_grafana() {
 }
 
 start_nifi() {
-  podman pod create \
-   --name nifi \
-   --hostname nifi \
-   --userns keep-id \
-   --infra-name nifi-infra \
-   --sysctl net.ipv6.conf.all.disable_ipv6=1 \
-   --sysctl net.ipv6.conf.default.disable_ipv6=1 \
-   --network data_network
-
+  start_pod nifi
   podman run -d \
    --name nifi1 \
    --pod nifi \
@@ -281,24 +252,19 @@ start_nifi() {
 }
 
 start_data_proxy() {
-  podman pod create \
-   --name data_proxy \
-   --hostname data_proxy \
-   --infra-name data-proxy-infra \
-   --network data_network \
-   --sysctl net.ipv6.conf.all.disable_ipv6=1 \
-   --sysctl net.ipv6.conf.default.disable_ipv6=1 \
-   --publish ${DATA_DASHBOARD_PORT}:${DATA_DASHBOARD_PORT} \
-   --publish ${MONGO_PORT}:${MONGO_PORT} \
-   --publish ${ARANGO_PORT}:${ARANGO_PORT} \
-   --publish ${ELASTIC_PORT}:${ELASTIC_PORT} \
-   --publish ${KIBANA_PORT}:${KIBANA_PORT} \
-   --publish ${GRAFANA_PORT}:${GRAFANA_PORT} \
-   --publish ${NIFI_PORT}:${NIFI_PORT}
-
+  publish_args=(
+    --publish "${DATA_DASHBOARD_PORT}:${DATA_DASHBOARD_PORT}"
+    --publish "${MONGO_PORT}:${MONGO_PORT}"
+    --publish "${ARANGO_PORT}:${ARANGO_PORT}"
+    --publish "${ELASTIC_PORT}:${ELASTIC_PORT}"
+    --publish "${KIBANA_PORT}:${KIBANA_PORT}"
+    --publish "${GRAFANA_PORT}:${GRAFANA_PORT}"
+    --publish "${NIFI_PORT}:${NIFI_PORT}"
+  )
+  start_pod proxy "${publish_args[@]}"
   podman run -d \
-   --name traefik_proxy_data \
-   --pod data_proxy \
+   --name proxy_traefik \
+   --pod proxy \
    --secret source=test-crt,target=/certs/test.crt,type=mount \
    --secret source=test-key,target=/certs/test.key,type=mount \
    --secret source=trust-pem,target=/certs/trust.pem,type=mount \
