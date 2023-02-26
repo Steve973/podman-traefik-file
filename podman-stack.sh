@@ -50,6 +50,15 @@ create_secrets() {
   done
 }
 
+create_directories() {
+  mkdir -p "${WORK_DIR}/nifi/content_repository"
+  mkdir -p "${WORK_DIR}/nifi/database_repository"
+  mkdir -p "${WORK_DIR}/nifi/flowfile_repository"
+  mkdir -p "${WORK_DIR}/nifi/logs"
+  mkdir -p "${WORK_DIR}/nifi/persistent-conf/archive"
+  mkdir -p "${WORK_DIR}/nifi/provenance_repository"
+}
+
 create_data_network() {
   podman network create data_network --internal
 }
@@ -66,6 +75,7 @@ clean_resources() {
 
 provision_data_resources() {
   create_certs
+  create_directories
   init_mongodb
   init_arangodb
   init_elasticsearch
@@ -241,12 +251,12 @@ start_nifi() {
   podman run -d \
    --name nifi1 \
    --pod nifi \
-   --volume ./nifi/content_repository:/opt/nifi/nifi-current/persistent-conf:Z \
-   --volume ./nifi/content_repository:/opt/nifi/nifi-current/content_repository:Z \
-   --volume ./nifi/database_repository:/opt/nifi/nifi-current/database_repository:Z \
-   --volume ./nifi/flowfile_repository:/opt/nifi/nifi-current/flowfile_repository:Z \
-   --volume ./nifi/logs:/opt/nifi/nifi-current/logs:Z \
-   --volume ./nifi/provenance_repository:/opt/nifi/nifi-current/provenance_repository:Z \
+   --volume ${WORK_DIR}/nifi/content_repository:/opt/nifi/nifi-current/persistent-conf:Z \
+   --volume ${WORK_DIR}/nifi/content_repository:/opt/nifi/nifi-current/content_repository:Z \
+   --volume ${WORK_DIR}/nifi/database_repository:/opt/nifi/nifi-current/database_repository:Z \
+   --volume ${WORK_DIR}/nifi/flowfile_repository:/opt/nifi/nifi-current/flowfile_repository:Z \
+   --volume ${WORK_DIR}/nifi/logs:/opt/nifi/nifi-current/logs:Z \
+   --volume ${WORK_DIR}/nifi/provenance_repository:/opt/nifi/nifi-current/provenance_repository:Z \
    -e NIFI_WEB_HTTP_PORT=${NIFI_PORT} \
    -e SINGLE_USER_CREDENTIALS_USERNAME=admin \
    -e SINGLE_USER_CREDENTIALS_PASSWORD=test123 \
