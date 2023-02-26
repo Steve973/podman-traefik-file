@@ -280,8 +280,8 @@ start_data_proxy() {
    --secret source=test-crt,target=/certs/test.crt,type=mount \
    --secret source=test-key,target=/certs/test.key,type=mount \
    --secret source=trust-pem,target=/certs/trust.pem,type=mount \
-   --volume ./traefik/data/config:/etc/traefik/dynamic:Z \
-   --volume ./traefik/data/credentials.txt:/etc/credentials.txt:Z \
+   --volume ./traefik/config:/etc/traefik/dynamic:Z \
+   --volume ./traefik/credentials.txt:/etc/credentials.txt:Z \
    docker.io/traefik:${TRAEFIK_VERSION} \
     --global.checkNewVersion=false \
     --global.sendAnonymousUsage=false \
