@@ -22,6 +22,8 @@ GRAFANA_PORT=3000
 NIFI_PORT=8088
 WORK_DIR=/tmp
 
+LISTEN_IP=$(ip -4 -o addr show enp37s0 | awk '{print $4}' | cut -d "/" -f 1)
+
 #</editor-fold>
 ## Global script variables above here
 ########################################################################################################################
@@ -253,13 +255,13 @@ start_nifi() {
 
 start_data_proxy() {
   publish_args=(
-    --publish "${DATA_DASHBOARD_PORT}:${DATA_DASHBOARD_PORT}"
-    --publish "${MONGO_PORT}:${MONGO_PORT}"
-    --publish "${ARANGO_PORT}:${ARANGO_PORT}"
-    --publish "${ELASTIC_PORT}:${ELASTIC_PORT}"
-    --publish "${KIBANA_PORT}:${KIBANA_PORT}"
-    --publish "${GRAFANA_PORT}:${GRAFANA_PORT}"
-    --publish "${NIFI_PORT}:${NIFI_PORT}"
+    --publish "${LISTEN_IP}:${DATA_DASHBOARD_PORT}:${DATA_DASHBOARD_PORT}"
+    --publish "${LISTEN_IP}:${MONGO_PORT}:${MONGO_PORT}"
+    --publish "${LISTEN_IP}:${ARANGO_PORT}:${ARANGO_PORT}"
+    --publish "${LISTEN_IP}:${ELASTIC_PORT}:${ELASTIC_PORT}"
+    --publish "${LISTEN_IP}:${KIBANA_PORT}:${KIBANA_PORT}"
+    --publish "${LISTEN_IP}:${GRAFANA_PORT}:${GRAFANA_PORT}"
+    --publish "${LISTEN_IP}:${NIFI_PORT}:${NIFI_PORT}"
   )
   start_pod proxy "${publish_args[@]}"
   podman run -d \
