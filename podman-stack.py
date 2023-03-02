@@ -446,7 +446,6 @@ def start(listen_ip):
     start_nifi()
     start_data_proxy(listen_ip)
 
-
 # </editor-fold>
 # Start methods above here
 ########################################################################################################################
