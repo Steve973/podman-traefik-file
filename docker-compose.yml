@@ -4,8 +4,13 @@ services:
 
   mongodb:
     image: docker.io/mongo:${MONGO_VERSION}
+    hostname: mongodb
+    container_name: mongodb
+    userns_mode: keep-id
+    networks:
+      - data_network
     volumes:
-      - ${WORK_DIR}/mongodb/db:/data/db
+      - ${WORK_DIR}/mongodb/db:/data/db:Z
     command:
       - '--quiet'
       - '--bind_ip_all'
@@ -16,16 +21,26 @@ services:
 
   arangodb:
     image: docker.io/arangodb:${ARANGO_VERSION}
+    hostname: arangodb
+    container_name: arangodb
+    userns_mode: keep-id
+    networks:
+      - data_network
     volumes:
-      - ${WORK_DIR}/arangodb/data:/var/lib/arangodb3
-      - ${WORK_DIR}/arangodb/apps:/var/lib/arangodb3-apps
+      - ${WORK_DIR}/arangodb/data:/var/lib/arangodb3:Z
+      - ${WORK_DIR}/arangodb/apps:/var/lib/arangodb3-apps:Z
     environment:
       - ARANGO_ROOT_PASSWORD=${TEST_PASS}
 
   elasticsearch:
     image: docker.io/elasticsearch:${ELK_VERSION}
+    hostname: elasticsearch01
+    container_name: elasticsearch01
+    userns_mode: keep-id
+    networks:
+      - data_network
     volumes:
-      - ${WORK_DIR}/elasticsearch/data:/usr/share/elasticsearch/data
+      - ${WORK_DIR}/elasticsearch/data:/usr/share/elasticsearch/data:Z
     environment:
       - discovery.type=single-node
       - ELASTIC_PASSWORD=${TEST_PASS}
@@ -33,6 +48,11 @@ services:
 
   kibana:
     image: docker.io/kibana:${ELK_VERSION}
+    hostname: kibana
+    container_name: kibana
+    userns_mode: keep-id
+    networks:
+      - data_network
     environment:
       - SERVERNAME=kibana
       - ELASTICSEARCH_HOSTS=http://elasticsearch01:${ELASTIC_PORT}
@@ -41,16 +61,26 @@ services:
 
   grafana:
     image: docker.io/grafana/grafana:${GRAFANA_VERSION}
+    hostname: grafana
+    container_name: grafana
+    userns_mode: keep-id
+    networks:
+      - data_network
 
   nifi:
     image: docker.io/apache/nifi:latest
+    hostname: nifi
+    container_name: nifi
+    userns_mode: keep-id
+    networks:
+      - data_network
     volumes:
-      - ${WORK_DIR}/nifi/content_repository:/opt/nifi/nifi-current/persistent-conf
-      - ${WORK_DIR}/nifi/content_repository:/opt/nifi/nifi-current/content_repository
-      - ${WORK_DIR}/nifi/database_repository:/opt/nifi/nifi-current/database_repository
-      - ${WORK_DIR}/nifi/flowfile_repository:/opt/nifi/nifi-current/flowfile_repository
-      - ${WORK_DIR}/nifi/logs:/opt/nifi/nifi-current/logs
-      - ${WORK_DIR}/nifi/provenance_repository:/opt/nifi/nifi-current/provenance_repository
+      - ${WORK_DIR}/nifi/content_repository:/opt/nifi/nifi-current/persistent-conf:Z
+      - ${WORK_DIR}/nifi/content_repository:/opt/nifi/nifi-current/content_repository:Z
+      - ${WORK_DIR}/nifi/database_repository:/opt/nifi/nifi-current/database_repository:Z
+      - ${WORK_DIR}/nifi/flowfile_repository:/opt/nifi/nifi-current/flowfile_repository:Z
+      - ${WORK_DIR}/nifi/logs:/opt/nifi/nifi-current/logs:Z
+      - ${WORK_DIR}/nifi/provenance_repository:/opt/nifi/nifi-current/provenance_repository:Z
     environment:
       - NIFI_WEB_HTTP_PORT=${NIFI_PORT}
       - SINGLE_USER_CREDENTIALS_USERNAME=admin
@@ -58,16 +88,16 @@ services:
 
   proxy:
     image: docker.io/traefik:${TRAEFIK_VERSION}
-    secrets:
-      - test-crt
-      - test-key
-      - trust-pem
+    hostname: proxy
+    container_name: proxy
+    networks:
+      - data_network
     volumes:
       - ${WORK_DIR}/certs/test.crt:/certs/test.crt
       - ${WORK_DIR}/certs/test.key:/certs/test.key
       - ${WORK_DIR}/certs/myCA.pem:/certs/trust.pem
-      - ./traefik/config:/etc/traefik/dynamic
-      - ./traefik/credentials.txt:/etc/credentials.txt
+      - ./traefik/config:/etc/traefik/dynamic:Z
+      - ./traefik/credentials.txt:/etc/credentials.txt:Z
     ports:
       - ${LISTEN_IP}:${DATA_DASHBOARD_PORT}:${DATA_DASHBOARD_PORT}
       - ${LISTEN_IP}:${MONGO_PORT}:${MONGO_PORT}
@@ -92,10 +122,6 @@ services:
       - '--entrypoints.nifi-http.address=:${NIFI_PORT}'
       - '--providers.file.directory=/etc/traefik/dynamic'
 
-secrets:
-  test-crt:
-    external: true
-  test-key:
-    external: true
-  trust-pem:
+networks:
+  data_network:
     external: true
