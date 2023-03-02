@@ -5,7 +5,7 @@ HOST=$(hostname)
 
 if [ ! -d "${WORK_DIR}"/certs ]; then
   # create certs dir
-  mkdir "${WORK_DIR}"/certs
+  mkdir -p "${WORK_DIR}"/certs
   # create the CA extension file
   envsubst <./testCA-ext-template.txt >"${WORK_DIR}"/certs/test.ext
   pushd "${WORK_DIR}"/certs

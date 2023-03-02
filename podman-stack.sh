@@ -4,25 +4,31 @@
 ## Global script variables below here
 #<editor-fold desc="global vars">
 
+# App versions
 MONGO_VERSION=6.0.3
 ARANGO_VERSION=3.10.2
 ELK_VERSION=8.5.3
 GRAFANA_VERSION=9.3.2
 TRAEFIK_VERSION=2.9.6
 
+# App ports
 DATA_DASHBOARD_PORT=8444
 MONGO_PORT=27017
-ARANGO_ROOT_PASSWORD=test123
 ARANGO_PORT=8529
-ELASTIC_PASSWORD=test123
 ELASTIC_PORT=9200
-KIBANA_PASSWORD=test123
 KIBANA_PORT=5601
 GRAFANA_PORT=3000
 NIFI_PORT=8088
+
+# Directories
 WORK_DIR=/tmp
 
-LISTEN_IP=$(ip -4 -o addr show enp37s0 | awk '{print $4}' | cut -d "/" -f 1)
+# Passwords
+TEST_PASS=test123
+
+# Partial address (at least) of the host IP address to listen on
+# Similar to a subnet, but without trailing ".0" octets
+LISTEN_IP="${1:-192.168}"
 
 #</editor-fold>
 ## Global script variables above here
@@ -31,6 +37,19 @@ LISTEN_IP=$(ip -4 -o addr show enp37s0 | awk '{print $4}' | cut -d "/" -f 1)
 ########################################################################################################################
 ## Init methods below here
 #<editor-fold desc="init methods">
+
+get_listen_ip() {
+  local original_arg="${LISTEN_IP}"
+  LISTEN_IP=$(ip -4 -o addr | grep "inet ${original_arg}" | awk '{print $4}' | cut -d "/" -f 1)
+  IFS='.' read -r -a ip <<< "${LISTEN_IP}"
+  if [[ ${ip[0]} -le 255 && ${ip[1]} -le 255 && ${ip[2]} -le 255 && ${ip[3]} -le 255 ]] \
+        && [[ ${LISTEN_IP} =~ ^${ORIGINAL_ARGS} ]]; then
+    echo "Listening on IP: ${LISTEN_IP}"
+  else
+    echo "Could not find an IP address bound to this host that corresponds to '${original_arg}'"
+    exit 1
+  fi
+}
 
 create_certs() {
   if [ ! -d ${WORK_DIR}/certs ]; then
@@ -60,11 +79,7 @@ create_directories() {
 }
 
 create_data_network() {
-  podman network create data_network --internal
-}
-
-remove_data_network() {
-  podman network rm data_network
+  podman network create data_network
 }
 
 clean_resources() {
@@ -74,6 +89,7 @@ clean_resources() {
 }
 
 provision_data_resources() {
+  get_listen_ip
   create_certs
   create_directories
   init_mongodb
@@ -89,7 +105,7 @@ init_mongodb() {
      --name mongodb \
      --volume ${WORK_DIR}/mongodb/db:/data/db:Z \
      --env "MONGO_INITDB_ROOT_USERNAME=root" \
-     --env "MONGO_INITDB_ROOT_PASSWORD=${MONGO_ROOT_PASSWORD}" \
+     --env "MONGO_INITDB_ROOT_PASSWORD=${TEST_PASS}" \
      --env "MONGO_INITDB_DATABASE=admin" \
      --publish ${MONGO_PORT}:${MONGO_PORT} \
      --userns keep-id \
@@ -110,7 +126,7 @@ init_elasticsearch() {
      --name es01 \
      --volume ${WORK_DIR}/elasticsearch/data:/usr/share/elasticsearch/data:Z \
      --env discovery.type=single-node \
-     --env ELASTIC_PASSWORD=${ELASTIC_PASSWORD} \
+     --env ELASTIC_PASSWORD=${TEST_PASS} \
      --env xpack.security.enabled=true \
      --publish ${ELASTIC_PORT}:${ELASTIC_PORT} \
      --userns keep-id \
@@ -120,7 +136,7 @@ init_elasticsearch() {
       sleep 10
     done
     echo "Setting kibana_system password"
-    until curl -s -X POST -u "elastic:${ELASTIC_PASSWORD}" -H "Content-Type: application/json" http://localhost:${ELASTIC_PORT}/_security/user/kibana_system/_password -d "{\"password\":\"${KIBANA_PASSWORD}\"}" | grep -q "^{}"; do
+    until curl -s -X POST -u "elastic:${TEST_PASS}" -H "Content-Type: application/json" http://localhost:${ELASTIC_PORT}/_security/user/kibana_system/_password -d "{\"password\":\"${TEST_PASS}\"}" | grep -q "^{}"; do
       sleep 10
     done
     echo "Elasticsearch initialization complete"
@@ -151,6 +167,10 @@ stop_service() {
   podman container rm -f "${service}"
   podman pod stop "${pod}"
   podman pod rm -f "${pod}"
+}
+
+remove_data_network() {
+  podman network rm data_network
 }
 
 stop() {
@@ -210,7 +230,7 @@ start_arangodb() {
    --pod arangodb \
    --volume ${WORK_DIR}/arangodb/data:/var/lib/arangodb3:Z \
    --volume ${WORK_DIR}/arangodb/apps:/var/lib/arangodb3-apps:Z \
-   --env ARANGO_ROOT_PASSWORD=${ARANGO_ROOT_PASSWORD} \
+   --env ARANGO_ROOT_PASSWORD=${TEST_PASS} \
    docker.io/arangodb:${ARANGO_VERSION}
 }
 
@@ -221,7 +241,7 @@ start_elasticsearch() {
    --name es01 \
    --volume ${WORK_DIR}/elasticsearch/data:/usr/share/elasticsearch/data:Z \
    --env discovery.type=single-node \
-   --env ELASTIC_PASSWORD=${ELASTIC_PASSWORD} \
+   --env ELASTIC_PASSWORD=${TEST_PASS} \
    --env xpack.security.enabled=true \
    docker.io/elasticsearch:${ELK_VERSION}
 }
@@ -234,7 +254,7 @@ start_kibana() {
    --env SERVERNAME=kibana \
    --env ELASTICSEARCH_HOSTS=http://elasticsearch01:${ELASTIC_PORT} \
    --env ELASTICSEARCH_USERNAME=kibana_system \
-   --env ELASTICSEARCH_PASSWORD=${KIBANA_PASSWORD} \
+   --env ELASTICSEARCH_PASSWORD=${TEST_PASS} \
    docker.io/kibana:${ELK_VERSION}
 }
 
@@ -259,7 +279,7 @@ start_nifi() {
    --volume ${WORK_DIR}/nifi/provenance_repository:/opt/nifi/nifi-current/provenance_repository:Z \
    -e NIFI_WEB_HTTP_PORT=${NIFI_PORT} \
    -e SINGLE_USER_CREDENTIALS_USERNAME=admin \
-   -e SINGLE_USER_CREDENTIALS_PASSWORD=test123 \
+   -e SINGLE_USER_CREDENTIALS_PASSWORD=${TEST_PASS} \
    docker.io/apache/nifi:latest
 }
 
