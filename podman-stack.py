@@ -453,16 +453,21 @@ def start(listen_ip):
 
 
 parser = argparse.ArgumentParser(description='Launch reverse proxied data services.')
-parser.add_argument('action', nargs='?', default='start', choices=['start', 'stop', 'clean'],
+parser.add_argument('action',
+                    nargs='?',
+                    default='start',
+                    choices=['start', 'stop', 'clean'],
                     help='the action to perform on the data application stack')
-parser.add_argument('--listen-ip', dest='listen_ip', default='192.168', required=False,
+parser.add_argument('--listen-ip',
+                    dest='listen_ip',
+                    default='192.168',
+                    required=False,
                     help='First octets of host IP address to listen on')
 
 args = parser.parse_args()
 stackAction = args.action
 if stackAction == 'start':
-    listenIp = get_listen_ip(args.listen_ip)
-    start(listenIp)
+    start(args.listen_ip)
 elif stackAction == 'stop':
     stop()
 elif stackAction == 'clean':
