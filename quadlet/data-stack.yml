@@ -1,0 +1,667 @@
+# Persistent Volume Claims
+
+#########################################################
+## ArangoDB Apps Volume
+#########################################################
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: arangodb-apps-pv
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  claimRef:
+    name: arangodb-apps-pvc
+  capacity:
+    storage: 10Mi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "${WORK_DIR}/arangodb/apps"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: arangodb-apps-pvc
+  labels:
+    app: arangodb
+spec:
+  volumeName: arangodb-apps-pv
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Mi
+
+#########################################################
+## ArangoDB Data Volume
+#########################################################
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: arangodb-data-pv
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  claimRef:
+    name: arangodb-data-pvc
+  capacity:
+    storage: 10Mi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "${WORK_DIR}/arangodb/data"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: arangodb-data-pvc
+  labels:
+    app: arangodb
+spec:
+  volumeName: arangodb-data-pv
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Mi
+
+#########################################################
+## Elasticsearch Data Volume
+#########################################################
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: elasticsearch-data-pv
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  claimRef:
+    name: elasticsearch-data-pvc
+  capacity:
+    storage: 10Mi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "${WORK_DIR}/elasticsearch/data"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: elasticsearch-data-pvc
+  labels:
+    app: elasticsearch01
+spec:
+  volumeName: elasticsearch-data-pv
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Mi
+
+#########################################################
+## MongoDB Data Volume
+#########################################################
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: mongodb-data-pv
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  claimRef:
+    name: mongodb-data-pvc
+  capacity:
+    storage: 10Mi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "${WORK_DIR}/mongodb/db"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mongodb-data-pvc
+  labels:
+    app: mongodb
+spec:
+  volumeName: mongodb-data-pv
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Mi
+
+#########################################################
+## NIFI Conf Volume
+#########################################################
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: nifi-conf-pv
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  claimRef:
+    name: nifi-conf-pvc
+  capacity:
+    storage: 10Mi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "${WORK_DIR}/nifi/persistent-conf"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nifi-conf-pvc
+  labels:
+    app: nifi
+spec:
+  volumeName: nifi-conf-pv
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Mi
+
+#########################################################
+## NIFI Content Repo Volume
+#########################################################
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: nifi-content-repo-pv
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  claimRef:
+    name: nifi-content-repo-pvc
+  capacity:
+    storage: 10Mi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "${WORK_DIR}/nifi/content_repository"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nifi-content-repo-pvc
+  labels:
+    app: nifi
+spec:
+  volumeName: nifi-content-repo-pv
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Mi
+
+#########################################################
+## NIFI Database Repo Volume
+#########################################################
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: nifi-database-repo-pv
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  claimRef:
+    name: nifi-database-repo-pvc
+  capacity:
+    storage: 10Mi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "${WORK_DIR}/nifi/database_repository"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nifi-database-repo-pvc
+  labels:
+    app: nifi
+spec:
+  volumeName: nifi-database-repo-pv
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Mi
+
+#########################################################
+## NIFI Flowfile Repo Volume
+#########################################################
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: nifi-flowfile-repo-pv
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  claimRef:
+    name: nifi-flowfile-repo-pvc
+  capacity:
+    storage: 10Mi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "${WORK_DIR}/nifi/flowfile_repository"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nifi-flowfile-repo-pvc
+  labels:
+    app: nifi
+spec:
+  volumeName: nifi-flowfile-repo-pv
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Mi
+
+#########################################################
+## NIFI Logs Volume
+#########################################################
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: nifi-logs-pv
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  claimRef:
+    name: nifi-logs-pvc
+  capacity:
+    storage: 10Mi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "${WORK_DIR}/nifi/logs"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nifi-logs-pvc
+  labels:
+    app: nifi
+spec:
+  volumeName: nifi-logs-pv
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Mi
+
+#########################################################
+## NIFI Provenance Repo Volume
+#########################################################
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: nifi-provenance-repo-pv
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  claimRef:
+    name: nifi-provenance-repo-pvc
+  capacity:
+    storage: 10Mi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "${WORK_DIR}/nifi/provenance_repository"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nifi-provenance-repo-pvc
+  labels:
+    app: nifi
+spec:
+  volumeName: nifi-provenance-repo-pv
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Mi
+
+#########################################################
+## Traefik Dynamic Config Volume
+#########################################################
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: traefik-configs-pv
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  claimRef:
+    name: traefik-configs-pvc
+  capacity:
+    storage: 10Mi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "./traefik/config"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: traefik-configs-pvc
+  labels:
+    app: traefik
+spec:
+  volumeName: traefik-configs-pv
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Mi
+
+#########################################################
+## ArangoDB Deployment
+#########################################################
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: arangodb
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: arangodb
+  template:
+    metadata:
+      labels:
+        app: arangodb
+    spec:
+      containers:
+        - name: arangodb
+          image: docker.io/library/arangodb:3.10.2
+          env:
+            - name: ARANGO_ROOT_PASSWORD
+              value: test123
+          volumeMounts:
+            - mountPath: /var/lib/arangodb3-apps
+              name: arangodb-apps-dir
+            - mountPath: /var/lib/arangodb3
+              name: arangodb-data-dir
+      volumes:
+        - name: arangodb-apps-dir
+          persistentVolumeClaim:
+            claimName: arangodb-apps-pvc
+        - name: arangodb-data-dir
+          persistentVolumeClaim:
+            claimName: arangodb-data-pvc
+
+#########################################################
+## Elasticsearch Deployment
+#########################################################
+---
+# Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: elasticsearch01
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: elasticsearch01
+  template:
+    metadata:
+      labels:
+        app: elasticsearch01
+    spec:
+      containers:
+        - name: es01
+          image: docker.io/library/elasticsearch:8.5.3
+          env:
+            - name: discovery.type
+              value: single-node
+            - name: ELASTIC_PASSWORD
+              value: test123
+            - name: xpack.security.enabled
+              value: "true"
+          volumeMounts:
+            - mountPath: /usr/share/elasticsearch/data
+              name: elasticsearch-data-dir
+      volumes:
+        - name: elasticsearch-data-dir
+          persistentVolumeClaim:
+            claimName: elasticsearch-data-pvc
+
+#########################################################
+## Grafana Deployment
+#########################################################
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: grafana
+  template:
+    metadata:
+      labels:
+        app: grafana
+    spec:
+      containers:
+        - name: grafana1
+          image: docker.io/grafana/grafana:9.3.2
+
+#########################################################
+## Kibana Deployment
+#########################################################
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kibana
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kibana
+  template:
+    metadata:
+      labels:
+        app: kibana
+    spec:
+      containers:
+        - name: kibana1
+          image: docker.io/library/kibana:8.5.3
+          env:
+            - name: SERVERNAME
+              value: kibana
+            - name: ELASTICSEARCH_HOSTS
+              value: http://elasticsearch01:9200
+            - name: ELASTICSEARCH_USERNAME
+              value: kibana_system
+            - name: ELASTICSEARCH_PASSWORD
+              value: test123
+
+#########################################################
+## MongoDB Deployment
+#########################################################
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mongodb
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mongodb
+  template:
+    metadata:
+      labels:
+        app: mongodb
+    spec:
+      containers:
+        - name: mongodb
+          image: docker.io/library/mongo:6.0.3
+          args:
+            - --quiet
+            - --bind_ip_all
+            - --auth
+            - --enableFreeMonitoring
+            - "off"
+            - --journal
+          volumeMounts:
+            - mountPath: /data/db
+              name: mongodb-data-dir
+      volumes:
+        - name: mongodb-data-dir
+          persistentVolumeClaim:
+            claimName: mongodb-data-pvc
+
+#########################################################
+## NiFi Deployment
+#########################################################
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nifi
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nifi
+  template:
+    metadata:
+      labels:
+        app: nifi
+    spec:
+      containers:
+        - name: nifi
+          image: docker.io/apache/nifi:latest
+          env:
+            - name: NIFI_WEB_HTTP_PORT
+              value: ${NIFI_PORT}
+            - name: SINGLE_USER_CREDENTIALS_USERNAME
+              value: admin
+            - name: SINGLE_USER_CREDENTIALS_PASSWORD
+              value: ${TEST_PASS}
+          volumeMounts:
+            - mountPath: /opt/nifi/nifi-current/persistent-conf
+              name: nifi-persistent-conf-dir
+            - mountPath: /opt/nifi/nifi-current/content_repository
+              name: nifi-content-repo-dir
+            - mountPath: /opt/nifi/nifi-current/database_repository
+              name: nifi-db-repo-dir
+            - mountPath: /opt/nifi/nifi-current/flowfile_repository
+              name: nifi-flowfile-dir
+            - mountPath: /opt/nifi/nifi-current/logs
+              name: nifi-logs-dir
+            - mountPath: /opt/nifi/nifi-current/provenance_repository
+              name: nifi-provenance-repo-dir
+      volumes:
+        - name: nifi-persistent-conf-dir
+          persistentVolumeClaim:
+            claimName: nifi-conf-pvc
+        - name: nifi-content-repo-dir
+          persistentVolumeClaim:
+            claimName: nifi-content-repo-pvc
+        - name: nifi-db-repo-dir
+          persistentVolumeClaim:
+            claimName: nifi-database-repo-pvc
+        - name: nifi-flowfile-dir
+          persistentVolumeClaim:
+            claimName: nifi-flowfile-repo-pvc
+        - name: nifi-logs-dir
+          persistentVolumeClaim:
+            claimName: nifi-logs-pvc
+        - name: nifi-provenance-repo-dir
+          persistentVolumeClaim:
+            claimName: nifi-provenance-repo-pvc
+
+#########################################################
+## Traefik Deployment
+#########################################################
+---
+apiVersion: v1
+data:
+  users: dGVzdDokMnkkMTAkanFPZDBNVHYwR0x2N251NTdvcVdpT2p4YlouS1BNbnpqZjc0RGFIdUlLanpTRTR6UjlqRTY=
+kind: Secret
+metadata:
+  name: traefik-dashboard-auth-secret
+  namespace: traefik
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: proxy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: proxy
+  template:
+    metadata:
+      labels:
+        app: proxy
+    spec:
+      containers:
+        - name: proxy
+          image: docker.io/traefik:${TRAEFIK_VERSION}
+          args:
+            - --global.checkNewVersion=false
+            - --global.sendAnonymousUsage=false
+            - --accessLog=true
+            - --accessLog.format=json
+            - --api=true
+            - --api.dashboard=true
+            - --entrypoints.websecure.address=:${DATA_DASHBOARD_PORT}
+            - --entrypoints.mongo-tcp.address=:${MONGO_PORT}
+            - --entrypoints.arango-http.address=:${ARANGO_PORT}
+            - --entrypoints.elasticsearch-http.address=:${ELASTIC_PORT}
+            - --entrypoints.kibana-http.address=:${KIBANA_PORT}
+            - --entrypoints.grafana-http.address=:${GRAFANA_PORT}
+            - --entrypoints.nifi-http.address=:${NIFI_PORT}
+            - --providers.file.directory=/etc/traefik/dynamic
+          volumeMounts:
+            - mountPath: /etc/traefik/dynamic
+              name: traefik-dynamic-config-dir
+            - mountPath: /etc/credentials.txt
+              name: traefik-dashboard-basic-auth-file
+      volumes:
+        - name: traefik-dynamic-config-dir
+          persistentVolumeClaim:
+            claimName: traefik-configs-pvc
+        - name: traefik-dashboard-basic-auth-file
+          secret:
+            secretName: traefik-dashboard-auth-secret

@@ -1,0 +1,429 @@
+apiVersion: v1
+data:
+  ARANGO_PORT: 8529
+  ARANGO_VERSION: 3.10.2
+  DATA_DASHBOARD_PORT: 8444
+  ELASTIC_PORT: 9200
+  ELK_VERSION: 8.5.3
+  GRAFANA_PORT: 3000
+  GRAFANA_VERSION: 9.3.2
+  KIBANA_PORT: 5601
+  MONGO_PORT: 27017
+  MONGO_VERSION: 6.0.3
+  NIFI_PORT: 8888
+  TEST_PASS: test123
+  TRAEFIK_VERSION: 2.9.6
+  WORK_DIR: /tmp/data_stack
+kind: ConfigMap
+metadata:
+  name: data-stack-properties
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: arangodb
+spec:
+  ports:
+  - name: arango-http
+    port: 8529
+    protocol: TCP
+    targetPort: 8529
+  selector:
+    app: arangodb
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: elasticsearch01
+spec:
+  ports:
+  - name: elasticsearch-http
+    port: 9200
+    protocol: TCP
+    targetPort: 9200
+  selector:
+    app: elasticsearch01
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana
+spec:
+  ports:
+  - name: grafana-http
+    port: 3000
+    protocol: TCP
+    targetPort: 3000
+  selector:
+    app: grafana
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kibana
+spec:
+  ports:
+  - name: kibana-http
+    port: 5601
+    protocol: TCP
+    targetPort: 5601
+  selector:
+    app: kibana
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongodb
+spec:
+  ports:
+  - name: mongodb-tcp
+    port: 27017
+    protocol: TCP
+    targetPort: 27017
+  selector:
+    app: mongodb
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nifi
+spec:
+  ports:
+  - name: nifi-http
+    port: 8888
+    protocol: TCP
+    targetPort: 8888
+  selector:
+    app: nifi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: traefik
+spec:
+  ports:
+  - name: dashboard-port
+    port: 8444
+    protocol: TCP
+    targetPort: 8444
+  - name: mongo-port
+    port: 27017
+    protocol: TCP
+    targetPort: 27017
+  - name: arango-port
+    port: 8529
+    protocol: TCP
+    targetPort: 8529
+  - name: elastic-port
+    port: 9200
+    protocol: TCP
+    targetPort: 9200
+  - name: kibana-port
+    port: 5601
+    protocol: TCP
+    targetPort: 5601
+  - name: grafana-port
+    port: 3000
+    protocol: TCP
+    targetPort: 3000
+  - name: nifi-port
+    port: 8888
+    protocol: TCP
+    targetPort: 8888
+  selector:
+    app: traefik
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: arangodb
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: arangodb
+  template:
+    metadata:
+      labels:
+        app: arangodb
+    spec:
+      containers:
+      - env:
+        - name: ARANGO_ROOT_PASSWORD
+          value: test123
+        image: docker.io/library/arangodb:3.10.2
+        name: arangodb
+        volumeMounts:
+        - mountPath: /var/lib/arangodb3-apps
+          name: arangodb-apps-dir
+        - mountPath: /var/lib/arangodb3
+          name: arangodb-data-dir
+      volumes:
+      - hostPath:
+          path: /tmp/data_stack/arangodb/apps
+          type: Directory
+        name: arangodb-apps-dir
+      - hostPath:
+          path: /tmp/data_stack/arangodb/data
+          type: Directory
+        name: arangodb-data-dir
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: elasticsearch01
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: elasticsearch01
+  template:
+    metadata:
+      labels:
+        app: elasticsearch01
+    spec:
+      containers:
+      - env:
+        - name: discovery.type
+          value: single-node
+        - name: ELASTIC_PASSWORD
+          value: test123
+        - name: xpack.security.enabled
+          value: "true"
+        image: docker.io/library/elasticsearch:8.5.3
+        name: es01
+        volumeMounts:
+        - mountPath: /usr/share/elasticsearch/data
+          name: elasticsearch-data-dir
+      volumes:
+      - hostPath:
+          path: /tmp/data_stack/elasticsearch/data
+          type: Directory
+        name: elasticsearch-data-dir
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: grafana
+  template:
+    metadata:
+      labels:
+        app: grafana
+    spec:
+      containers:
+      - image: docker.io/grafana/grafana:9.3.2
+        name: grafana1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kibana
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kibana
+  template:
+    metadata:
+      labels:
+        app: kibana
+    spec:
+      containers:
+      - env:
+        - name: SERVERNAME
+          value: kibana
+        - name: ELASTICSEARCH_HOSTS
+          value: http://elasticsearch01:9200
+        - name: ELASTICSEARCH_USERNAME
+          value: kibana_system
+        - name: ELASTICSEARCH_PASSWORD
+          value: test123
+        image: docker.io/library/kibana:8.5.3
+        name: kibana1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mongodb
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mongodb
+  template:
+    metadata:
+      labels:
+        app: mongodb
+    spec:
+      containers:
+      - args:
+        - --quiet
+        - --bind_ip_all
+        - --auth
+        - --enableFreeMonitoring
+        - "off"
+        - --journal
+        image: docker.io/library/mongo:6.0.3
+        name: mongodb
+        volumeMounts:
+        - mountPath: /data/db
+          name: mongodb-data-dir
+        - mountPath: /data/configdb
+          name: mongodb-configdb-dir
+      volumes:
+      - hostPath:
+          path: /tmp/data_stack/mongodb/db
+          type: Directory
+        name: mongodb-data-dir
+      - hostPath:
+          path: /tmp/data_stack/mongodb/configdb
+          type: Directory
+        name: mongodb-configdb-dir
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nifi
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nifi
+  template:
+    metadata:
+      labels:
+        app: nifi
+    spec:
+      containers:
+      - env:
+        - name: NIFI_WEB_HTTP_PORT
+          value: 8888
+        - name: SINGLE_USER_CREDENTIALS_USERNAME
+          value: admin
+        - name: SINGLE_USER_CREDENTIALS_PASSWORD
+          value: test123
+        image: docker.io/apache/nifi:latest
+        name: nifi
+        volumeMounts:
+        - mountPath: /opt/nifi/nifi-current/persistent-conf
+          name: nifi-persistent-conf-dir
+        - mountPath: /opt/nifi/nifi-current/content_repository
+          name: nifi-content-repo-dir
+        - mountPath: /opt/nifi/nifi-current/database_repository
+          name: nifi-db-repo-dir
+        - mountPath: /opt/nifi/nifi-current/flowfile_repository
+          name: nifi-flowfile-dir
+        - mountPath: /opt/nifi/nifi-current/logs
+          name: nifi-logs-dir
+        - mountPath: /opt/nifi/nifi-current/provenance_repository
+          name: nifi-provenance-repo-dir
+      volumes:
+      - hostPath:
+          path: /tmp/data_stack/nifi/persistent-conf
+          type: Directory
+        name: nifi-persistent-conf-dir
+      - hostPath:
+          path: /tmp/data_stack/nifi/content_repository
+          type: Directory
+        name: nifi-content-repo-dir
+      - hostPath:
+          path: /tmp/data_stack/nifi/database_repository
+          type: Directory
+        name: nifi-db-repo-dir
+      - hostPath:
+          path: /tmp/data_stack/nifi/flowfile_repository
+          type: Directory
+        name: nifi-flowfile-dir
+      - hostPath:
+          path: /tmp/data_stack/nifi/logs
+          type: Directory
+        name: nifi-logs-dir
+      - hostPath:
+          path: /tmp/data_stack/nifi/provenance_repository
+          type: Directory
+        name: nifi-provenance-repo-dir
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: proxy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: proxy
+  template:
+    metadata:
+      labels:
+        app: proxy
+    spec:
+      containers:
+      - args:
+        - --global.checkNewVersion=false
+        - --global.sendAnonymousUsage=false
+        - --accessLog=true
+        - --accessLog.format=json
+        - --api=true
+        - --api.dashboard=true
+        - --entrypoints.websecure.address=:8444
+        - --entrypoints.mongo-tcp.address=:27017
+        - --entrypoints.arango-http.address=:8529
+        - --entrypoints.elasticsearch-http.address=:9200
+        - --entrypoints.kibana-http.address=:5601
+        - --entrypoints.grafana-http.address=:3000
+        - --entrypoints.nifi-http.address=:8888
+        - --providers.file.directory=/etc/traefik/dynamic
+        image: docker.io/traefik:2.9.6
+        name: proxy
+        ports:
+        - containerPort: 8444
+          hostPort: 8444
+        - containerPort: 27017
+          hostPort: 27017
+        - containerPort: 8529
+          hostPort: 8529
+        - containerPort: 9200
+          hostPort: 9200
+        - containerPort: 5601
+          hostPort: 5601
+        - containerPort: 3000
+          hostPort: 3000
+        - containerPort: 8888
+          hostPort: 8888
+        volumeMounts:
+        - mountPath: /etc/traefik/dynamic
+          name: traefik-dynamic-config-dir
+        - mountPath: /etc/credentials.txt
+          name: traefik-dashboard-basic-auth-file
+        - mountPath: /certs/test.crt
+          name: test-cert-file
+        - mountPath: /certs/test.key
+          name: test-key-file
+        - mountPath: /certs/trust.pem
+          name: trust-pem-file
+      volumes:
+      - hostPath:
+          path: /tmp/data_stack/traefik/config
+          type: Directory
+        name: traefik-dynamic-config-dir
+      - hostPath:
+          path: /tmp/data_stack/traefik/credentials.txt
+          type: File
+        name: traefik-dashboard-basic-auth-file
+      - hostPath:
+          path: /tmp/data_stack/certs/test.crt
+          type: File
+        name: test-cert-file
+      - hostPath:
+          path: /tmp/data_stack/certs/test.key
+          type: File
+        name: test-key-file
+      - hostPath:
+          path: /tmp/data_stack/certs/myCA.pem
+          type: File
+        name: trust-pem-file

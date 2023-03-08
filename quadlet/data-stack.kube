@@ -1,0 +1,20 @@
+[Install]
+WantedBy=default.target
+
+[Unit]
+Requires=quadlet-demo-mysql.service
+After=quadlet-demo-mysql.service
+
+[Kube]
+# Point to the yaml file in the same directory
+Yaml=data-stack.yml
+# Use the data_network network
+Network=data_network.network
+# Traefik ports
+PublishPort=${DATA_DASHBOARD_PORT}:${DATA_DASHBOARD_PORT}
+PublishPort=${MONGO_PORT}:${MONGO_PORT}
+PublishPort=${ARANGO_PORT}:${ARANGO_PORT}
+PublishPort=${ELASTIC_PORT}:${ELASTIC_PORT}
+PublishPort=${KIBANA_PORT}:${KIBANA_PORT}
+PublishPort=${GRAFANA_PORT}:${GRAFANA_PORT}
+PublishPort=${NIFI_PORT}:${NIFI_PORT}

@@ -1,0 +1,13 @@
+varReference:
+  - path: spec/template/spec/containers/image
+    kind: Deployment
+  - path: spec/template/spec/containers/env/value
+    kind: Deployment
+  - path: spec/template/spec/containers/args
+    kind: Deployment
+  - path: spec/template/spec/containers/ports/containerPort
+    kind: Deployment
+  - path: spec/template/spec/containers/ports/hostPort
+    kind: Deployment
+  - path: spec/template/spec/volumes/hostPath/path
+    kind: Deployment

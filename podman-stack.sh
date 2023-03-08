@@ -4,31 +4,7 @@
 ## Global script variables below here
 #<editor-fold desc="global vars">
 
-# App versions
-MONGO_VERSION=6.0.3
-ARANGO_VERSION=3.10.2
-ELK_VERSION=8.5.3
-GRAFANA_VERSION=9.3.2
-TRAEFIK_VERSION=2.9.6
-
-# App ports
-DATA_DASHBOARD_PORT=8444
-MONGO_PORT=27017
-ARANGO_PORT=8529
-ELASTIC_PORT=9200
-KIBANA_PORT=5601
-GRAFANA_PORT=3000
-NIFI_PORT=8088
-
-# Directories
-WORK_DIR=/tmp
-
-# Passwords
-TEST_PASS=test123
-
-# Partial address (at least) of the host IP address to listen on
-# Similar to a subnet, but without trailing ".0" octets
-LISTEN_IP="${1:-192.168}"
+source ./.env
 
 #</editor-fold>
 ## Global script variables above here
@@ -52,16 +28,16 @@ get_listen_ip() {
 }
 
 create_certs() {
-  if [ ! -d ${WORK_DIR}/certs ]; then
-    sh ./generate-certs.sh ${WORK_DIR}
+  if [ ! -d "${WORK_DIR}/certs" ]; then
+    sh ./generate-certs.sh "${WORK_DIR}"
   fi
 }
 
 create_secrets() {
   declare -A secrets=(
-    [test-crt]="${WORK_DIR}"/certs/test.crt
-    [test-key]="${WORK_DIR}"/certs/test.key
-    [trust-pem]="${WORK_DIR}"/certs/myCA.pem
+    [test-crt]="${WORK_DIR}/certs/test.crt"
+    [test-key]="${WORK_DIR}/certs/test.key"
+    [trust-pem]="${WORK_DIR}/certs/myCA.pem"
   )
   for secret_name in "${!secrets[@]}"; do
     podman secret ls --format "{{.Name}}" | grep "${secret_name}" || \
@@ -83,33 +59,24 @@ create_data_network() {
 }
 
 clean_resources() {
-  pushd ${WORK_DIR} || return
-  rm -rf certs/ mongodb/ arangodb/ elasticsearch/
+  pushd "${WORK_DIR}" || return
+  rm -rf certs/ mongodb/ arangodb/ elasticsearch/ nifi/ traefik/
   popd || exit
 }
 
-provision_data_resources() {
-  get_listen_ip
-  create_certs
-  create_directories
-  init_mongodb
-  init_arangodb
-  init_elasticsearch
-}
-
 init_mongodb() {
-  if [ ! -d ${WORK_DIR}/mongodb ]; then
-    mkdir -p "${WORK_DIR}"/mongodb/configdb
-    mkdir -p "${WORK_DIR}"/mongodb/db
+  if [ ! -d "${WORK_DIR}/mongodb" ]; then
+    mkdir -p "${WORK_DIR}/mongodb/configdb"
+    mkdir -p "${WORK_DIR}/mongodb/db"
     podman run -d \
      --name mongodb \
-     --volume ${WORK_DIR}/mongodb/db:/data/db:Z \
+     --volume "${WORK_DIR}/mongodb/db":/data/db:Z \
      --env "MONGO_INITDB_ROOT_USERNAME=root" \
      --env "MONGO_INITDB_ROOT_PASSWORD=${TEST_PASS}" \
      --env "MONGO_INITDB_DATABASE=admin" \
-     --publish ${MONGO_PORT}:${MONGO_PORT} \
+     --publish "${MONGO_PORT}:${MONGO_PORT}" \
      --userns keep-id \
-     docker.io/mongo:${MONGO_VERSION} \
+     docker.io/mongo:"${MONGO_VERSION}" \
       --bind_ip_all \
       --enableFreeMonitoring off
     sleep 10
@@ -120,23 +87,23 @@ init_mongodb() {
 }
 
 init_elasticsearch() {
-  if [ ! -d ${WORK_DIR}/elasticsearch ]; then
-    mkdir -p "${WORK_DIR}"/elasticsearch/data
+  if [ ! -d "${WORK_DIR}/elasticsearch" ]; then
+    mkdir -p "${WORK_DIR}/elasticsearch/data"
     podman run -d \
      --name es01 \
-     --volume ${WORK_DIR}/elasticsearch/data:/usr/share/elasticsearch/data:Z \
-     --env discovery.type=single-node \
-     --env ELASTIC_PASSWORD=${TEST_PASS} \
-     --env xpack.security.enabled=true \
-     --publish ${ELASTIC_PORT}:${ELASTIC_PORT} \
+     --volume "${WORK_DIR}/elasticsearch/data":/usr/share/elasticsearch/data:Z \
+     --env "discovery.type=single-node" \
+     --env "ELASTIC_PASSWORD=${TEST_PASS}" \
+     --env "xpack.security.enabled=true" \
+     --publish "${ELASTIC_PORT}:${ELASTIC_PORT}" \
      --userns keep-id \
-     docker.io/elasticsearch:${ELK_VERSION}
+     docker.io/elasticsearch:"${ELK_VERSION}"
     echo "Waiting for Elasticsearch availability"
-    until curl -s http://localhost:${ELASTIC_PORT} | grep -q "missing authentication credentials"; do
+    until curl -s http://localhost:"${ELASTIC_PORT}" | grep -q "missing authentication credentials"; do
       sleep 10
     done
     echo "Setting kibana_system password"
-    until curl -s -X POST -u "elastic:${TEST_PASS}" -H "Content-Type: application/json" http://localhost:${ELASTIC_PORT}/_security/user/kibana_system/_password -d "{\"password\":\"${TEST_PASS}\"}" | grep -q "^{}"; do
+    until curl -s -X POST -u "elastic:${TEST_PASS}" -H "Content-Type: application/json" http://localhost:"${ELASTIC_PORT}"/_security/user/kibana_system/_password -d "{\"password\":\"${TEST_PASS}\"}" | grep -q "^{}"; do
       sleep 10
     done
     echo "Elasticsearch initialization complete"
@@ -146,10 +113,24 @@ init_elasticsearch() {
 }
 
 init_arangodb() {
-  if [ ! -d ${WORK_DIR}/arangodb ]; then
-    mkdir -p ${WORK_DIR}/arangodb/apps
-    mkdir -p ${WORK_DIR}/arangodb/data
+  if [ ! -d "${WORK_DIR}/arangodb" ]; then
+    mkdir -p "${WORK_DIR}/arangodb/apps"
+    mkdir -p "${WORK_DIR}/arangodb/data"
   fi
+}
+
+copy_traefik_files() {
+  cp -r traefik "${WORK_DIR}/"
+}
+
+provision_data_resources() {
+  get_listen_ip
+  create_certs
+  create_directories
+  init_mongodb
+  init_arangodb
+  init_elasticsearch
+  copy_traefik_files
 }
 
 #</editor-fold>
@@ -214,8 +195,8 @@ start_mongodb() {
   podman run -d \
    --name data_mongodb \
    --pod mongodb \
-   --volume ${WORK_DIR}/mongodb/db:/data/db:Z \
-   docker.io/mongo:${MONGO_VERSION} \
+   --volume "${WORK_DIR}/mongodb/db":/data/db:Z \
+   docker.io/mongo:"${MONGO_VERSION}" \
     --quiet \
     --bind_ip_all \
     --auth \
@@ -228,10 +209,10 @@ start_arangodb() {
   podman run -d \
    --name data_arangodb \
    --pod arangodb \
-   --volume ${WORK_DIR}/arangodb/data:/var/lib/arangodb3:Z \
-   --volume ${WORK_DIR}/arangodb/apps:/var/lib/arangodb3-apps:Z \
-   --env ARANGO_ROOT_PASSWORD=${TEST_PASS} \
-   docker.io/arangodb:${ARANGO_VERSION}
+   --volume "${WORK_DIR}/arangodb/data":/var/lib/arangodb3:Z \
+   --volume "${WORK_DIR}/arangodb/apps":/var/lib/arangodb3-apps:Z \
+   --env "ARANGO_ROOT_PASSWORD=${TEST_PASS}" \
+   docker.io/arangodb:"${ARANGO_VERSION}"
 }
 
 start_elasticsearch() {
@@ -239,11 +220,11 @@ start_elasticsearch() {
   podman run -d \
    --pod elasticsearch01 \
    --name es01 \
-   --volume ${WORK_DIR}/elasticsearch/data:/usr/share/elasticsearch/data:Z \
-   --env discovery.type=single-node \
-   --env ELASTIC_PASSWORD=${TEST_PASS} \
-   --env xpack.security.enabled=true \
-   docker.io/elasticsearch:${ELK_VERSION}
+   --volume "${WORK_DIR}/elasticsearch/data":/usr/share/elasticsearch/data:Z \
+   --env "discovery.type=single-node" \
+   --env "ELASTIC_PASSWORD=${TEST_PASS}" \
+   --env "xpack.security.enabled=true" \
+   docker.io/elasticsearch:"${ELK_VERSION}"
 }
 
 start_kibana() {
@@ -251,11 +232,11 @@ start_kibana() {
   podman run -d \
    --name kibana1 \
    --pod kibana \
-   --env SERVERNAME=kibana \
-   --env ELASTICSEARCH_HOSTS=http://elasticsearch01:${ELASTIC_PORT} \
-   --env ELASTICSEARCH_USERNAME=kibana_system \
-   --env ELASTICSEARCH_PASSWORD=${TEST_PASS} \
-   docker.io/kibana:${ELK_VERSION}
+   --env "SERVERNAME=kibana" \
+   --env "ELASTICSEARCH_HOSTS=http://elasticsearch01:${ELASTIC_PORT}" \
+   --env "ELASTICSEARCH_USERNAME=kibana_system" \
+   --env "ELASTICSEARCH_PASSWORD=${TEST_PASS}" \
+   docker.io/kibana:"${ELK_VERSION}"
 }
 
 start_grafana() {
@@ -263,7 +244,7 @@ start_grafana() {
   podman run -d \
    --name grafana1 \
    --pod grafana \
-   docker.io/grafana/grafana:${GRAFANA_VERSION}
+   docker.io/grafana/grafana:"${GRAFANA_VERSION}"
 }
 
 start_nifi() {
@@ -271,15 +252,15 @@ start_nifi() {
   podman run -d \
    --name nifi1 \
    --pod nifi \
-   --volume ${WORK_DIR}/nifi/content_repository:/opt/nifi/nifi-current/persistent-conf:Z \
-   --volume ${WORK_DIR}/nifi/content_repository:/opt/nifi/nifi-current/content_repository:Z \
-   --volume ${WORK_DIR}/nifi/database_repository:/opt/nifi/nifi-current/database_repository:Z \
-   --volume ${WORK_DIR}/nifi/flowfile_repository:/opt/nifi/nifi-current/flowfile_repository:Z \
-   --volume ${WORK_DIR}/nifi/logs:/opt/nifi/nifi-current/logs:Z \
-   --volume ${WORK_DIR}/nifi/provenance_repository:/opt/nifi/nifi-current/provenance_repository:Z \
-   -e NIFI_WEB_HTTP_PORT=${NIFI_PORT} \
-   -e SINGLE_USER_CREDENTIALS_USERNAME=admin \
-   -e SINGLE_USER_CREDENTIALS_PASSWORD=${TEST_PASS} \
+   --volume "${WORK_DIR}/nifi/persistent-conf":/opt/nifi/nifi-current/persistent-conf:Z \
+   --volume "${WORK_DIR}/nifi/content_repository":/opt/nifi/nifi-current/content_repository:Z \
+   --volume "${WORK_DIR}/nifi/database_repository":/opt/nifi/nifi-current/database_repository:Z \
+   --volume "${WORK_DIR}/nifi/flowfile_repository":/opt/nifi/nifi-current/flowfile_repository:Z \
+   --volume "${WORK_DIR}/nifi/logs":/opt/nifi/nifi-current/logs:Z \
+   --volume "${WORK_DIR}/nifi/provenance_repository":/opt/nifi/nifi-current/provenance_repository:Z \
+   --env "NIFI_WEB_HTTP_PORT=${NIFI_PORT}" \
+   --env "SINGLE_USER_CREDENTIALS_USERNAME=admin" \
+   --env "SINGLE_USER_CREDENTIALS_PASSWORD=${TEST_PASS}" \
    docker.io/apache/nifi:latest
 }
 
@@ -300,22 +281,22 @@ start_data_proxy() {
    --secret source=test-crt,target=/certs/test.crt,type=mount \
    --secret source=test-key,target=/certs/test.key,type=mount \
    --secret source=trust-pem,target=/certs/trust.pem,type=mount \
-   --volume ./traefik/config:/etc/traefik/dynamic:Z \
-   --volume ./traefik/credentials.txt:/etc/credentials.txt:Z \
-   docker.io/traefik:${TRAEFIK_VERSION} \
+   --volume "${WORK_DIR}/traefik/config":/etc/traefik/dynamic:Z \
+   --volume "${WORK_DIR}/traefik/credentials.txt":/etc/credentials.txt:Z \
+   docker.io/traefik:"${TRAEFIK_VERSION}" \
     --global.checkNewVersion=false \
     --global.sendAnonymousUsage=false \
     --accessLog=true \
     --accessLog.format=json \
     --api=true \
     --api.dashboard=true \
-    --entrypoints.websecure.address=:${DATA_DASHBOARD_PORT} \
-    --entrypoints.mongo-tcp.address=:${MONGO_PORT} \
-    --entrypoints.arango-http.address=:${ARANGO_PORT} \
-    --entrypoints.elasticsearch-http.address=:${ELASTIC_PORT} \
-    --entrypoints.kibana-http.address=:${KIBANA_PORT} \
-    --entrypoints.grafana-http.address=:${GRAFANA_PORT} \
-    --entrypoints.nifi-http.address=:${NIFI_PORT} \
+    --entrypoints.websecure.address=:"${DATA_DASHBOARD_PORT}" \
+    --entrypoints.mongo-tcp.address=:"${MONGO_PORT}" \
+    --entrypoints.arango-http.address=:"${ARANGO_PORT}" \
+    --entrypoints.elasticsearch-http.address=:"${ELASTIC_PORT}" \
+    --entrypoints.kibana-http.address=:"${KIBANA_PORT}" \
+    --entrypoints.grafana-http.address=:"${GRAFANA_PORT}" \
+    --entrypoints.nifi-http.address=:"${NIFI_PORT}" \
     --providers.file.directory=/etc/traefik/dynamic
 }
 

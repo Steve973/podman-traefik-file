@@ -1,0 +1,84 @@
+#########################################################
+## NiFi Service
+#########################################################
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nifi
+spec:
+  ports:
+    - name: nifi-http
+      port: $(NIFI_PORT)
+      protocol: TCP
+      targetPort: $(NIFI_PORT)
+  selector:
+    app: nifi
+
+#########################################################
+## NiFi Deployment
+#########################################################
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nifi
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nifi
+  template:
+    metadata:
+      labels:
+        app: nifi
+    spec:
+      containers:
+        - name: nifi
+          image: docker.io/apache/nifi:latest
+          env:
+            - name: NIFI_WEB_HTTP_PORT
+              value: "$(NIFI_PORT)"
+            - name: SINGLE_USER_CREDENTIALS_USERNAME
+              value: admin
+            - name: SINGLE_USER_CREDENTIALS_PASSWORD
+              value: $(TEST_PASS)
+          volumeMounts:
+            - mountPath: /opt/nifi/nifi-current/persistent-conf
+              name: nifi-persistent-conf-dir
+            - mountPath: /opt/nifi/nifi-current/content_repository
+              name: nifi-content-repo-dir
+            - mountPath: /opt/nifi/nifi-current/database_repository
+              name: nifi-db-repo-dir
+            - mountPath: /opt/nifi/nifi-current/flowfile_repository
+              name: nifi-flowfile-dir
+            - mountPath: /opt/nifi/nifi-current/logs
+              name: nifi-logs-dir
+            - mountPath: /opt/nifi/nifi-current/provenance_repository
+              name: nifi-provenance-repo-dir
+      volumes:
+        - name: nifi-persistent-conf-dir
+          hostPath:
+            path: "$(WORK_DIR)/nifi/persistent-conf"
+            type: Directory
+        - name: nifi-content-repo-dir
+          hostPath:
+            path: "$(WORK_DIR)/nifi/content_repository"
+            type: Directory
+        - name: nifi-db-repo-dir
+          hostPath:
+            path: "$(WORK_DIR)/nifi/database_repository"
+            type: Directory
+        - name: nifi-flowfile-dir
+          hostPath:
+            path: "$(WORK_DIR)/nifi/flowfile_repository"
+            type: Directory
+        - name: nifi-logs-dir
+          hostPath:
+            path: "$(WORK_DIR)/nifi/logs"
+            type: Directory
+        - name: nifi-provenance-repo-dir
+          hostPath:
+            path: "$(WORK_DIR)/nifi/provenance_repository"
+            type: Directory
+

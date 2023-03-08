@@ -1,0 +1,54 @@
+#########################################################
+## Elasticsearch Service
+#########################################################
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: elasticsearch01
+spec:
+  ports:
+    - name: elasticsearch-http
+      port: $(ELASTIC_PORT)
+      protocol: TCP
+      targetPort: $(ELASTIC_PORT)
+  selector:
+    app: elasticsearch01
+
+#########################################################
+## Elasticsearch Deployment
+#########################################################
+---
+# Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: elasticsearch01
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: elasticsearch01
+  template:
+    metadata:
+      labels:
+        app: elasticsearch01
+    spec:
+      containers:
+        - name: es01
+          image: docker.io/library/elasticsearch:$(ELK_VERSION)
+          env:
+            - name: discovery.type
+              value: single-node
+            - name: ELASTIC_PASSWORD
+              value: $(TEST_PASS)
+            - name: xpack.security.enabled
+              value: "true"
+          volumeMounts:
+            - mountPath: /usr/share/elasticsearch/data
+              name: elasticsearch-data-dir
+      volumes:
+        - name: elasticsearch-data-dir
+          hostPath:
+            path: "$(WORK_DIR)/elasticsearch/data"
+            type: Directory

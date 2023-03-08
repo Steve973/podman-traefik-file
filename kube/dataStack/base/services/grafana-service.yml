@@ -1,0 +1,38 @@
+#########################################################
+## Grafana Service
+#########################################################
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana
+spec:
+  ports:
+    - name: grafana-http
+      port: $(GRAFANA_PORT)
+      protocol: TCP
+      targetPort: $(GRAFANA_PORT)
+  selector:
+    app: grafana
+
+#########################################################
+## Grafana Deployment
+#########################################################
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: grafana
+  template:
+    metadata:
+      labels:
+        app: grafana
+    spec:
+      containers:
+        - name: grafana1
+          image: docker.io/grafana/grafana:$(GRAFANA_VERSION)

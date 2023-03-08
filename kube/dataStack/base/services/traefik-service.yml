@@ -1,0 +1,124 @@
+#########################################################
+## Traefik Service
+#########################################################
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: traefik
+spec:
+  ports:
+    - name: dashboard-port
+      port: $(DATA_DASHBOARD_PORT)
+      protocol: TCP
+      targetPort: $(DATA_DASHBOARD_PORT)
+    - name: mongo-port
+      port: $(MONGO_PORT)
+      protocol: TCP
+      targetPort: $(MONGO_PORT)
+    - name: arango-port
+      port: $(ARANGO_PORT)
+      protocol: TCP
+      targetPort: $(ARANGO_PORT)
+    - name: elastic-port
+      port: $(ELASTIC_PORT)
+      protocol: TCP
+      targetPort: $(ELASTIC_PORT)
+    - name: kibana-port
+      port: $(KIBANA_PORT)
+      protocol: TCP
+      targetPort: $(KIBANA_PORT)
+    - name: grafana-port
+      port: $(GRAFANA_PORT)
+      protocol: TCP
+      targetPort: $(GRAFANA_PORT)
+    - name: nifi-port
+      port: $(NIFI_PORT)
+      protocol: TCP
+      targetPort: $(NIFI_PORT)
+  selector:
+    app: traefik
+
+#########################################################
+## Traefik Deployment
+#########################################################
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: proxy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: proxy
+  template:
+    metadata:
+      labels:
+        app: proxy
+    spec:
+      containers:
+        - name: proxy
+          image: docker.io/traefik:$(TRAEFIK_VERSION)
+          args:
+            - --global.checkNewVersion=false
+            - --global.sendAnonymousUsage=false
+            - --accessLog=true
+            - --accessLog.format=json
+            - --api=true
+            - --api.dashboard=true
+            - --entrypoints.websecure.address=:$(DATA_DASHBOARD_PORT)
+            - --entrypoints.mongo-tcp.address=:$(MONGO_PORT)
+            - --entrypoints.arango-http.address=:$(ARANGO_PORT)
+            - --entrypoints.elasticsearch-http.address=:$(ELASTIC_PORT)
+            - --entrypoints.kibana-http.address=:$(KIBANA_PORT)
+            - --entrypoints.grafana-http.address=:$(GRAFANA_PORT)
+            - --entrypoints.nifi-http.address=:$(NIFI_PORT)
+            - --providers.file.directory=/etc/traefik/dynamic
+          volumeMounts:
+            - mountPath: /etc/traefik/dynamic
+              name: traefik-dynamic-config-dir
+            - mountPath: /etc/credentials.txt
+              name: traefik-dashboard-basic-auth-file
+            - mountPath: /certs/test.crt
+              name: test-cert-file
+            - mountPath: /certs/test.key
+              name: test-key-file
+            - mountPath: /certs/trust.pem
+              name: trust-pem-file
+          ports:
+            - containerPort: $(DATA_DASHBOARD_PORT)
+              hostPort: $(DATA_DASHBOARD_PORT)
+            - containerPort: $(MONGO_PORT)
+              hostPort: $(MONGO_PORT)
+            - containerPort: $(ARANGO_PORT)
+              hostPort: $(ARANGO_PORT)
+            - containerPort: $(ELASTIC_PORT)
+              hostPort: $(ELASTIC_PORT)
+            - containerPort: $(KIBANA_PORT)
+              hostPort: $(KIBANA_PORT)
+            - containerPort: $(GRAFANA_PORT)
+              hostPort: $(GRAFANA_PORT)
+            - containerPort: $(NIFI_PORT)
+              hostPort: $(NIFI_PORT)
+      volumes:
+        - name: traefik-dynamic-config-dir
+          hostPath:
+            path: "$(WORK_DIR)/traefik/config"
+            type: Directory
+        - name: traefik-dashboard-basic-auth-file
+          hostPath:
+            path: "$(WORK_DIR)/traefik/credentials.txt"
+            type: File
+        - name: test-cert-file
+          hostPath:
+            path: "$(WORK_DIR)/certs/test.crt"
+            type: File
+        - name: test-key-file
+          hostPath:
+            path: "$(WORK_DIR)/certs/test.key"
+            type: File
+        - name: trust-pem-file
+          hostPath:
+            path: "$(WORK_DIR)/certs/myCA.pem"
+            type: File

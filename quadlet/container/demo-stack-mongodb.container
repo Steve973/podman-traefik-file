@@ -1,0 +1,17 @@
+[Unit]
+Description=MongoDB container for the podman-traefik-file demo stack.
+
+[Service]
+Type=exec
+
+[Install]
+WantedBy=default.target
+
+[Container]
+Image=docker.io/mongo:${MONGO_VERSION}
+ContainerName=mongodb
+Volume=${WORK_DIR}/mongodb/db:/data/db
+Network=data_network.network
+KeepId=yes
+Timezone=UTC
+Exec=mongod "--quiet" "--bind_ip_all" "--auth" "--enableFreeMonitoring" "off" "--journal"

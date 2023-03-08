@@ -1,0 +1,36 @@
+[Unit]
+Description=Traefik container for the podman-traefik-file demo stack.
+
+[Service]
+Type=exec
+
+[Install]
+WantedBy=default.target
+
+[Container]
+Image=docker.io/traefik:${TRAEFIK_VERSION}
+ContainerName=proxy
+Secret=test-crt,target=/certs/test.crt,type=mount
+Secret=test-key,target=/certs/test.key,type=mount
+Secret=trust-pem,target=/certs/trust.pem,type=mount
+Secret=traefik-dashboard-auth-file,target=/certs/trust.pem,type=mount
+Volume=./traefik/config:/etc/traefik/dynamic
+Network=data_network.network
+KeepId=yes
+Timezone=UTC
+Exec=traefik \
+"--global.checkNewVersion=false" \
+"--global.sendAnonymousUsage=false" \
+"--accessLog=true" \
+"--accessLog.format=json" \
+"--api=true" \
+"--api.dashboard=true" \
+"--entrypoints.websecure.address=:${DATA_DASHBOARD_PORT}" \
+"--entrypoints.mongo-tcp.address=:${MONGO_PORT}" \
+"--entrypoints.arango-http.address=:${ARANGO_PORT}" \
+"--entrypoints.elasticsearch-http.address=:${ELASTIC_PORT}" \
+"--entrypoints.kibana-http.address=:${KIBANA_PORT}" \
+"--entrypoints.grafana-http.address=:${GRAFANA_PORT}" \
+"--entrypoints.nifi-http.address=:${NIFI_PORT}" \
+"--providers.file.directory=/etc/traefik/dynamic"
+

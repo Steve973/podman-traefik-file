@@ -1,0 +1,18 @@
+[Unit]
+Description=ArangoDB container for the podman-traefik-file demo stack.
+
+[Service]
+Type=exec
+
+[Install]
+WantedBy=default.target
+
+[Container]
+Image=docker.io/arangodb:${ARANGO_VERSION}
+ContainerName=arangodb
+Volume=${WORK_DIR}/arangodb/data:/var/lib/arangodb3
+Volume=${WORK_DIR}/arangodb/apps:/var/lib/arangodb3-apps
+Environment="ARANGO_ROOT_PASSWORD=${TEST_PASS}"
+Network=data_network.network
+KeepId=yes
+Timezone=UTC

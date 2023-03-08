@@ -1,0 +1,19 @@
+[Unit]
+Description=Kibana container for the podman-traefik-file demo stack.
+
+[Service]
+Type=exec
+
+[Install]
+WantedBy=default.target
+
+[Container]
+Image=docker.io/kibana:${ELK_VERSION}
+ContainerName=kibana
+Environment="SERVERNAME=kibana"
+Environment="ELASTICSEARCH_HOSTS=http://elasticsearch01:${ELASTIC_PORT}"
+Environment="ELASTICSEARCH_USERNAME=kibana_system"
+Environment="ELASTICSEARCH_PASSWORD=${TEST_PASS}"
+Network=data_network.network
+KeepId=yes
+Timezone=UTC

@@ -1,0 +1,59 @@
+#########################################################
+## MongoDB Service
+#########################################################
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongodb
+spec:
+  ports:
+    - name: mongodb-tcp
+      port: $(MONGO_PORT)
+      protocol: TCP
+      targetPort: $(MONGO_PORT)
+  selector:
+    app: mongodb
+
+#########################################################
+## MongoDB Deployment
+#########################################################
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mongodb
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mongodb
+  template:
+    metadata:
+      labels:
+        app: mongodb
+    spec:
+      containers:
+        - name: mongodb
+          image: docker.io/library/mongo:$(MONGO_VERSION)
+          args:
+            - --quiet
+            - --bind_ip_all
+            - --auth
+            - --enableFreeMonitoring
+            - "off"
+            - --journal
+          volumeMounts:
+            - mountPath: /data/db
+              name: mongodb-data-dir
+            - mountPath: /data/configdb
+              name: mongodb-configdb-dir
+      volumes:
+        - name: mongodb-data-dir
+          hostPath:
+            path: "$(WORK_DIR)/mongodb/db"
+            type: Directory
+        - name: mongodb-configdb-dir
+          hostPath:
+            path: "$(WORK_DIR)/mongodb/configdb"
+            type: Directory

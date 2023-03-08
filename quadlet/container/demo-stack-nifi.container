@@ -1,0 +1,24 @@
+[Unit]
+Description=Apache NiFi container for the podman-traefik-file demo stack.
+
+[Service]
+Type=exec
+
+[Install]
+WantedBy=default.target
+
+[Container]
+Image=docker.io/apache/nifi:latest
+ContainerName=nifi
+Volume=${WORK_DIR}/nifi/persistent-conf:/opt/nifi/nifi-current/persistent-conf
+Volume=${WORK_DIR}/nifi/content_repository:/opt/nifi/nifi-current/content_repository
+Volume=${WORK_DIR}/nifi/database_repository:/opt/nifi/nifi-current/database_repository
+Volume=${WORK_DIR}/nifi/flowfile_repository:/opt/nifi/nifi-current/flowfile_repository
+Volume=${WORK_DIR}/nifi/logs:/opt/nifi/nifi-current/logs
+Volume=${WORK_DIR}/nifi/provenance_repository:/opt/nifi/nifi-current/provenance_repository
+Environment="NIFI_WEB_HTTP_PORT=${NIFI_PORT}"
+Environment="SINGLE_USER_CREDENTIALS_USERNAME=admin"
+Environment="SINGLE_USER_CREDENTIALS_PASSWORD=${TEST_PASS}"
+Network=data_network.network
+KeepId=yes
+Timezone=UTC

@@ -1,0 +1,118 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - services/arangodb-service.yml
+  - services/elasticsearch-service.yml
+  - services/grafana-service.yml
+  - services/kibana.service.yml
+  - services/mongodb-service.yml
+  - services/nifi-service.yml
+  - services/traefik-service.yml
+  - config-map.yml
+
+configurations:
+  - configuration.yml
+
+generatorOptions:
+  disableNameSuffixHash: true
+
+vars:
+  - name: MONGO_VERSION
+    objref:
+      kind: ConfigMap
+      name: data-stack-properties
+      apiVersion: v1
+    fieldref:
+      fieldpath: data.MONGO_VERSION
+  - name: ARANGO_VERSION
+    objref:
+      kind: ConfigMap
+      name: data-stack-properties
+      apiVersion: v1
+    fieldref:
+      fieldpath: data.ARANGO_VERSION
+  - name: ELK_VERSION
+    objref:
+      kind: ConfigMap
+      name: data-stack-properties
+      apiVersion: v1
+    fieldref:
+      fieldpath: data.ELK_VERSION
+  - name: GRAFANA_VERSION
+    objref:
+      kind: ConfigMap
+      name: data-stack-properties
+      apiVersion: v1
+    fieldref:
+      fieldpath: data.GRAFANA_VERSION
+  - name: TRAEFIK_VERSION
+    objref:
+      kind: ConfigMap
+      name: data-stack-properties
+      apiVersion: v1
+    fieldref:
+      fieldpath: data.TRAEFIK_VERSION
+  - name: WORK_DIR
+    objref:
+      kind: ConfigMap
+      name: data-stack-properties
+      apiVersion: v1
+    fieldref:
+      fieldpath: data.WORK_DIR
+  - name: DATA_DASHBOARD_PORT
+    objref:
+      kind: ConfigMap
+      name: data-stack-properties
+      apiVersion: v1
+    fieldref:
+      fieldpath: data.DATA_DASHBOARD_PORT
+  - name: MONGO_PORT
+    objref:
+      kind: ConfigMap
+      name: data-stack-properties
+      apiVersion: v1
+    fieldref:
+      fieldpath: data.MONGO_PORT
+  - name: ARANGO_PORT
+    objref:
+      kind: ConfigMap
+      name: data-stack-properties
+      apiVersion: v1
+    fieldref:
+      fieldpath: data.ARANGO_PORT
+  - name: ELASTIC_PORT
+    objref:
+      kind: ConfigMap
+      name: data-stack-properties
+      apiVersion: v1
+    fieldref:
+      fieldpath: data.ELASTIC_PORT
+  - name: KIBANA_PORT
+    objref:
+      kind: ConfigMap
+      name: data-stack-properties
+      apiVersion: v1
+    fieldref:
+      fieldpath: data.KIBANA_PORT
+  - name: GRAFANA_PORT
+    objref:
+      kind: ConfigMap
+      name: data-stack-properties
+      apiVersion: v1
+    fieldref:
+      fieldpath: data.GRAFANA_PORT
+  - name: NIFI_PORT
+    objref:
+      kind: ConfigMap
+      name: data-stack-properties
+      apiVersion: v1
+    fieldref:
+      fieldpath: data.NIFI_PORT
+  - name: TEST_PASS
+    objref:
+      kind: ConfigMap
+      name: data-stack-properties
+      apiVersion: v1
+    fieldref:
+      fieldpath: data.TEST_PASS

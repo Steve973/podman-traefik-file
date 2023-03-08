@@ -1,0 +1,17 @@
+[Unit]
+Description=Elasticsearch container for the podman-traefik-file demo stack.
+
+[Service]
+Type=exec
+
+[Install]
+WantedBy=default.target
+
+[Container]
+Image=docker.io/elasticsearch:${ELK_VERSION}
+ContainerName=elasticsearch01
+Volume=${WORK_DIR}/elasticsearch/data:/usr/share/elasticsearch/data
+Environment="discovery.type=single-node" "ELASTIC_PASSWORD=${TEST_PASS}" "xpack.security.enabled=true"
+Network=data_network.network
+KeepId=yes
+Timezone=UTC

@@ -1,0 +1,47 @@
+#########################################################
+## Kibana Service
+#########################################################
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kibana
+spec:
+  ports:
+    - name: kibana-http
+      port: $(KIBANA_PORT)
+      protocol: TCP
+      targetPort: $(KIBANA_PORT)
+  selector:
+    app: kibana
+
+#########################################################
+## Kibana Deployment
+#########################################################
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kibana
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kibana
+  template:
+    metadata:
+      labels:
+        app: kibana
+    spec:
+      containers:
+        - name: kibana1
+          image: docker.io/library/kibana:$(ELK_VERSION)
+          env:
+            - name: SERVERNAME
+              value: kibana
+            - name: ELASTICSEARCH_HOSTS
+              value: http://elasticsearch01:$(ELASTIC_PORT)
+            - name: ELASTICSEARCH_USERNAME
+              value: kibana_system
+            - name: ELASTICSEARCH_PASSWORD
+              value: $(TEST_PASS)

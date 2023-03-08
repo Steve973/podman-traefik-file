@@ -1,0 +1,15 @@
+[Unit]
+Description=Grafana container for the podman-traefik-file demo stack.
+
+[Service]
+Type=exec
+
+[Install]
+WantedBy=default.target
+
+[Container]
+Image=docker.io/grafana/grafana:${GRAFANA_VERSION}
+ContainerName=grafana
+Network=data_network.network
+KeepId=yes
+Timezone=UTC

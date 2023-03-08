@@ -1,0 +1,55 @@
+#########################################################
+## ArangoDB Service
+#########################################################
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: arangodb
+spec:
+  ports:
+    - name: arango-http
+      port: $(ARANGO_PORT)
+      protocol: TCP
+      targetPort: $(ARANGO_PORT)
+  selector:
+    app: arangodb
+
+#########################################################
+## ArangoDB Deployment
+#########################################################
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: arangodb
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: arangodb
+  template:
+    metadata:
+      labels:
+        app: arangodb
+    spec:
+      containers:
+        - name: arangodb
+          image: docker.io/library/arangodb:$(ARANGO_VERSION)
+          env:
+            - name: ARANGO_ROOT_PASSWORD
+              value: $(TEST_PASS)
+          volumeMounts:
+            - mountPath: /var/lib/arangodb3-apps
+              name: arangodb-apps-dir
+            - mountPath: /var/lib/arangodb3
+              name: arangodb-data-dir
+      volumes:
+        - name: arangodb-apps-dir
+          hostPath:
+            path: "$(WORK_DIR)/arangodb/apps"
+            type: Directory
+        - name: arangodb-data-dir
+          hostPath:
+            path: "$(WORK_DIR)/arangodb/data"
+            type: Directory
